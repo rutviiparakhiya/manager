@@ -1,0 +1,10 @@
+{
+  "name": "mymanager-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix app start",
+    "tunnel": "npm --prefix app run tunnel",
+    "lint": "npm --prefix app run lint"
+  }
+}
