@@ -198,7 +198,7 @@ export function TaskSection({ title, section }: TaskSectionProps) {
             </View>
 
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              Adding to: {title.replace(' :-', '')}
+              Adding to: {title.replace(/\.+$/, '').trim()}
             </Text>
 
             <TextInput

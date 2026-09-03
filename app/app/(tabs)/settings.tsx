@@ -29,7 +29,6 @@ export default function SettingsScreen() {
         <View style={styles.headerContainer}>
           <View style={styles.brandRow}>
             <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
-            <View style={[styles.brandDot, { backgroundColor: colors.primary }]} />
           </View>
           <Text style={[styles.appTagline, { color: colors.textSecondary }]}>
             Preferences, appearance, and quote settings.

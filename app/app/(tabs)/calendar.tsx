@@ -6,12 +6,12 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { CalendarTasksMap, CalendarTaskItem } from '@/types/calendar';
 import {
-  dateToDateKey,
   loadAllCalendarTasks,
   addCalendarTask,
   toggleCalendarTask,
   removeCalendarTask,
 } from '@/services/calendarStorage';
+import { getISTDate, getISTDateKey } from '@/utils/timezone';
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { DateTasksCard } from '@/components/calendar/DateTasksCard';
@@ -23,15 +23,12 @@ export default function CalendarScreen() {
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
 
-  // State for real current date
-  const [currentRealDate, setCurrentRealDate] = useState<Date>(() => new Date());
+  // Navigation month & year in Indian Standard Time (IST)
+  const [displayedYear, setDisplayedYear] = useState<number>(() => getISTDate().year);
+  const [displayedMonth, setDisplayedMonth] = useState<number>(() => getISTDate().month);
   
-  // Navigation month & year
-  const [displayedYear, setDisplayedYear] = useState<number>(() => currentRealDate.getFullYear());
-  const [displayedMonth, setDisplayedMonth] = useState<number>(() => currentRealDate.getMonth());
-  
-  // Selected date key ('YYYY-MM-DD')
-  const [selectedDate, setSelectedDate] = useState<string>(() => dateToDateKey(currentRealDate));
+  // Selected date key ('YYYY-MM-DD' in IST)
+  const [selectedDate, setSelectedDate] = useState<string>(() => getISTDateKey());
   
   // Tasks mapping (keyed by 'YYYY-MM-DD')
   const [tasksMap, setTasksMap] = useState<CalendarTasksMap>({});
@@ -40,10 +37,11 @@ export default function CalendarScreen() {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [selectedTaskForMenu, setSelectedTaskForMenu] = useState<CalendarTaskItem | null>(null);
 
-  // Real-world current year and today's date key
-  const currentYear = currentRealDate.getFullYear();
-  const currentMonth = currentRealDate.getMonth();
-  const todayKey = dateToDateKey(currentRealDate);
+  // Real-world current year and today's date key in IST
+  const currentIST = getISTDate();
+  const currentYear = currentIST.year;
+  const currentMonth = currentIST.month;
+  const todayKey = currentIST.dateKey;
 
   // Load all tasks from AsyncStorage
   const refreshTasks = useCallback(async () => {
@@ -51,14 +49,13 @@ export default function CalendarScreen() {
     setTasksMap(loaded);
   }, []);
 
-  // Reset to today's date and current month/year every time tab gains focus
+  // Reset to today's date and current month/year in IST every time tab gains focus
   useFocusEffect(
     useCallback(() => {
-      const now = new Date();
-      setCurrentRealDate(now);
-      setDisplayedYear(now.getFullYear());
-      setDisplayedMonth(now.getMonth());
-      setSelectedDate(dateToDateKey(now));
+      const nowIST = getISTDate();
+      setDisplayedYear(nowIST.year);
+      setDisplayedMonth(nowIST.month);
+      setSelectedDate(nowIST.dateKey);
       refreshTasks();
     }, [refreshTasks])
   );
@@ -90,11 +87,10 @@ export default function CalendarScreen() {
   };
 
   const handleJumpToToday = () => {
-    const now = new Date();
-    setCurrentRealDate(now);
-    setDisplayedYear(now.getFullYear());
-    setDisplayedMonth(now.getMonth());
-    setSelectedDate(dateToDateKey(now));
+    const nowIST = getISTDate();
+    setDisplayedYear(nowIST.year);
+    setDisplayedMonth(nowIST.month);
+    setSelectedDate(nowIST.dateKey);
   };
 
   // Tapping any date cell selects it and opens the add task flow
@@ -169,7 +165,6 @@ export default function CalendarScreen() {
         <View style={styles.headerContainer}>
           <View style={styles.brandRow}>
             <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
-            <View style={[styles.brandDot, { backgroundColor: colors.primary }]} />
           </View>
           <Text style={[styles.appTagline, { color: colors.textSecondary }]}>
             Plan ahead, track tasks, and schedule your days.

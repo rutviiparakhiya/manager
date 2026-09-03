@@ -3,18 +3,19 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import 'react-native-reanimated';
 
 import {
   useFonts,
-  LobsterTwo_400Regular,
-  LobsterTwo_700Bold,
-  LobsterTwo_400Regular_Italic,
-  LobsterTwo_700Bold_Italic,
-} from '@expo-google-fonts/lobster-two';
+  Satisfy_400Regular,
+} from '@expo-google-fonts/satisfy';
 
 import { AppThemeProvider } from '@/context/ThemeContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { requestNotificationPermissions } from '@/services/notificationService';
+import { checkAndApplyMidnightRollover } from '@/services/taskStorage';
+import { getNextISTMidnightTimestamp } from '@/utils/timezone';
 
 // Prevent splash screen from auto-hiding before font assets are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -29,10 +30,7 @@ function RootNavigationContent() {
   const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
-    LobsterTwo_400Regular,
-    LobsterTwo_700Bold,
-    LobsterTwo_400Regular_Italic,
-    LobsterTwo_700Bold_Italic,
+    Satisfy_400Regular,
   });
 
   useEffect(() => {
@@ -40,6 +38,42 @@ function RootNavigationContent() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
+
+  // Request notification permissions on app mount
+  useEffect(() => {
+    requestNotificationPermissions().catch(() => {});
+  }, []);
+
+  // Check midnight rollover on app resume / state change and set exact midnight timer
+  useEffect(() => {
+    // Check rollover on launch
+    checkAndApplyMidnightRollover().catch(() => {});
+
+    // Listen for app coming to foreground
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        checkAndApplyMidnightRollover().catch(() => {});
+      }
+    });
+
+    // Schedule exact 12:00 AM IST midnight rollover timer while app remains open
+    let midnightTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleNextMidnight = () => {
+      const nextMidnightMs = getNextISTMidnightTimestamp();
+      const delay = Math.max(1000, nextMidnightMs - Date.now() + 500); // 500ms grace past midnight
+      midnightTimer = setTimeout(async () => {
+        await checkAndApplyMidnightRollover().catch(() => {});
+        scheduleNextMidnight();
+      }, delay);
+    };
+
+    scheduleNextMidnight();
+
+    return () => {
+      subscription.remove();
+      if (midnightTimer) clearTimeout(midnightTimer);
+    };
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;

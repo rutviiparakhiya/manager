@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { MotivationalQuoteCard } from '@/components/home/MotivationalQuoteCard';
 import { TaskSection } from '@/components/home/TaskSection';
+import { checkAndApplyMidnightRollover } from '@/services/taskStorage';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+
+  useFocusEffect(
+    useCallback(() => {
+      checkAndApplyMidnightRollover().catch(() => {});
+    }, [])
+  );
 
   return (
     <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
@@ -24,25 +32,21 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
-        {/* Top-left App Name Header */}
+        {/* Top-left App Name Header without dot or subtitle */}
         <View style={styles.headerContainer}>
           <View style={styles.brandRow}>
             <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
-            <View style={[styles.brandDot, { backgroundColor: colors.primary }]} />
           </View>
-          <Text style={[styles.appTagline, { color: colors.textSecondary }]}>
-            Stay organized, focused, and motivated.
-          </Text>
         </View>
 
-        {/* Motivational Quote Box */}
+        {/* Motivational Quote Section (clean, no box styling) */}
         <MotivationalQuoteCard />
 
         {/* Today's Tasks */}
-        <TaskSection title="Today's Tasks :-" section="today" />
+        <TaskSection title="Today's Tasks..." section="today" />
 
         {/* Yesterday's Tasks */}
-        <TaskSection title="Yesterday's Tasks" section="yesterday" />
+        <TaskSection title="Yesterday's Tasks....." section="yesterday" />
       </ScrollView>
     </View>
   );
@@ -59,7 +63,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   brandRow: {
     flexDirection: 'row',
@@ -69,18 +73,5 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '900',
     letterSpacing: -0.8,
-  },
-  brandDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 4,
-    marginBottom: 4,
-  },
-  appTagline: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 4,
-    letterSpacing: 0.1,
   },
 });

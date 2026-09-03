@@ -1,21 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarTaskItem, CalendarTasksMap } from '@/types/calendar';
+import { formatISTDateKey, getISTDate } from '@/utils/timezone';
 
 const CALENDAR_STORAGE_KEY = '@myManager:calendar_tasks_store';
 
-/**
- * Format year, month (0-indexed), and day into 'YYYY-MM-DD'
- */
-export function formatDateKey(year: number, month: number, day: number): string {
-  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-  return `${year}-${pad(month + 1)}-${pad(day)}`;
-}
+export { formatISTDateKey as formatDateKey };
 
 /**
- * Format a Date object into 'YYYY-MM-DD'
+ * Format a Date object into 'YYYY-MM-DD' in Indian Standard Time (IST).
  */
-export function dateToDateKey(date: Date): string {
-  return formatDateKey(date.getFullYear(), date.getMonth(), date.getDate());
+export function dateToDateKey(date: Date = new Date()): string {
+  return getISTDate(date.getTime()).dateKey;
 }
 
 /**

@@ -1,20 +1,88 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TaskItem, TaskSectionType } from '@/types/task';
+import { getISTDateKey, getDaysDiffIST } from '@/utils/timezone';
+import { syncPendingTasksNotification } from './notificationService';
 
 const STORAGE_KEYS: Record<TaskSectionType, string> = {
   today: '@myManager:tasks_today',
   yesterday: '@myManager:tasks_yesterday',
 };
 
+const STORAGE_KEY_LAST_ROLLOVER = '@myManager:last_rollover_ist_date';
+
+/**
+ * Check and execute the 12:00 AM IST midnight task rollover.
+ * - Today's Tasks get cleared.
+ * - Yesterday's Tasks move into Today's Tasks.
+ * - Yesterday's Tasks becomes empty.
+ * - Calendar tab tasks remain completely untouched.
+ */
+export async function checkAndApplyMidnightRollover(): Promise<boolean> {
+  try {
+    const currentISTKey = getISTDateKey();
+    const lastRolloverDate = await AsyncStorage.getItem(STORAGE_KEY_LAST_ROLLOVER);
+
+    // Initial run: set baseline to today so we don't accidentally wipe current day's tasks
+    if (!lastRolloverDate) {
+      await AsyncStorage.setItem(STORAGE_KEY_LAST_ROLLOVER, currentISTKey);
+      return false;
+    }
+
+    // Check if an IST calendar midnight has crossed
+    if (lastRolloverDate !== currentISTKey) {
+      const daysDiff = getDaysDiffIST(lastRolloverDate, currentISTKey);
+
+      if (daysDiff >= 1) {
+        const rawYesterday = await AsyncStorage.getItem(STORAGE_KEYS.yesterday);
+        const parsedYesterday: TaskItem[] = rawYesterday ? JSON.parse(rawYesterday) : [];
+
+        if (daysDiff === 1) {
+          // Exactly 1 day passed: Yesterday's tasks become Today's tasks; Yesterday is cleared
+          await AsyncStorage.setItem(STORAGE_KEYS.today, JSON.stringify(parsedYesterday));
+          await AsyncStorage.setItem(STORAGE_KEYS.yesterday, JSON.stringify([]));
+
+          // Sync 11:50 PM notification for the newly rolled-over Today's tasks
+          syncPendingTasksNotification(parsedYesterday).catch(() => {});
+        } else {
+          // 2 or more days passed: Both Yesterday and Today are cleared
+          await AsyncStorage.setItem(STORAGE_KEYS.today, JSON.stringify([]));
+          await AsyncStorage.setItem(STORAGE_KEYS.yesterday, JSON.stringify([]));
+
+          syncPendingTasksNotification([]).catch(() => {});
+        }
+
+        // Record the rollover completion
+        await AsyncStorage.setItem(STORAGE_KEY_LAST_ROLLOVER, currentISTKey);
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error during midnight rollover check:', error);
+    return false;
+  }
+}
+
 /**
  * Load tasks for a specific section from AsyncStorage.
+ * Automatically checks for midnight rollover before loading.
  */
 export async function loadTasks(section: TaskSectionType): Promise<TaskItem[]> {
   try {
+    await checkAndApplyMidnightRollover();
+
     const raw = await AsyncStorage.getItem(STORAGE_KEYS[section]);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const tasks = Array.isArray(parsed) ? parsed : [];
+
+    // If loading today's tasks, ensure notifications are synced
+    if (section === 'today') {
+      syncPendingTasksNotification(tasks).catch(() => {});
+    }
+
+    return tasks;
   } catch (error) {
     console.error(`Error loading tasks for ${section}:`, error);
     return [];
@@ -27,6 +95,9 @@ export async function loadTasks(section: TaskSectionType): Promise<TaskItem[]> {
 export async function saveTasks(section: TaskSectionType, tasks: TaskItem[]): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEYS[section], JSON.stringify(tasks));
+    if (section === 'today') {
+      syncPendingTasksNotification(tasks).catch(() => {});
+    }
   } catch (error) {
     console.error(`Error saving tasks for ${section}:`, error);
   }
