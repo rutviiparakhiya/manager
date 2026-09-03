@@ -1,34 +1,76 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOTIVATIONAL_QUOTES, Quote } from '@/data/quotes';
+import {
+  QuoteIntervalId,
+  DEFAULT_QUOTE_INTERVAL_ID,
+  getQuoteIntervalOption,
+} from '@/types/settings';
 
 const STORAGE_KEY_SEEN_IDS = '@myManager:quotes_seen_ids';
 const STORAGE_KEY_CURRENT_QUOTE = '@myManager:current_quote';
 const STORAGE_KEY_LAST_TIMESTAMP = '@myManager:quotes_last_timestamp';
-
-// 24 hours in milliseconds
-export const ROTATION_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const STORAGE_KEY_QUOTE_INTERVAL = '@myManager:quote_refresh_interval';
 
 export interface DailyQuoteState {
   quote: Quote;
   lastShownTimestamp: number;
   timeRemainingMs: number;
+  intervalId: QuoteIntervalId;
+  intervalLabel: string;
+  intervalShortLabel: string;
   seenCount: number;
   totalCount: number;
 }
 
 /**
- * Get or rotate the daily motivational quote according to the 24-hour elapsed rule.
- * Ensures no repeat quotes until the entire pool has been exhausted.
+ * Retrieve the saved quote refresh interval from AsyncStorage.
  */
-export async function getOrRotateDailyQuote(): Promise<DailyQuoteState> {
+export async function getStoredQuoteInterval(): Promise<QuoteIntervalId> {
+  try {
+    const saved = await AsyncStorage.getItem(STORAGE_KEY_QUOTE_INTERVAL);
+    if (saved) {
+      return saved as QuoteIntervalId;
+    }
+    return DEFAULT_QUOTE_INTERVAL_ID;
+  } catch (error) {
+    console.error('Error reading quote interval:', error);
+    return DEFAULT_QUOTE_INTERVAL_ID;
+  }
+}
+
+/**
+ * Save the selected quote refresh interval to AsyncStorage.
+ */
+export async function setStoredQuoteInterval(intervalId: QuoteIntervalId): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY_QUOTE_INTERVAL, intervalId);
+  } catch (error) {
+    console.error('Error saving quote interval:', error);
+  }
+}
+
+/**
+ * Get or rotate the motivational quote according to the active interval setting.
+ * Guarantees a quote NEVER repeats until all quotes in the pool have been shown once.
+ */
+export async function getOrRotateDailyQuote(forceRotate: boolean = false): Promise<DailyQuoteState> {
   const now = Date.now();
 
   try {
-    const [storedQuoteJson, storedTimestampStr, storedSeenIdsJson] = await Promise.all([
+    const [
+      storedQuoteJson,
+      storedTimestampStr,
+      storedSeenIdsJson,
+      storedIntervalId,
+    ] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEY_CURRENT_QUOTE),
       AsyncStorage.getItem(STORAGE_KEY_LAST_TIMESTAMP),
       AsyncStorage.getItem(STORAGE_KEY_SEEN_IDS),
+      getStoredQuoteInterval(),
     ]);
+
+    const intervalOption = getQuoteIntervalOption(storedIntervalId);
+    const intervalMs = intervalOption.durationMs;
 
     let seenIds: string[] = [];
     if (storedSeenIdsJson) {
@@ -45,14 +87,17 @@ export async function getOrRotateDailyQuote(): Promise<DailyQuoteState> {
     const lastTimestamp = storedTimestampStr ? parseInt(storedTimestampStr, 10) : 0;
     const elapsed = now - lastTimestamp;
 
-    // If a quote already exists and 24 hours haven't passed yet, persist current quote
-    if (storedQuoteJson && elapsed >= 0 && elapsed < ROTATION_INTERVAL_MS) {
+    // If a quote exists and the selected interval has not elapsed yet (and not force rotating)
+    if (!forceRotate && storedQuoteJson && elapsed >= 0 && elapsed < intervalMs) {
       try {
         const currentQuote: Quote = JSON.parse(storedQuoteJson);
         return {
           quote: currentQuote,
           lastShownTimestamp: lastTimestamp,
-          timeRemainingMs: Math.max(0, ROTATION_INTERVAL_MS - elapsed),
+          timeRemainingMs: Math.max(0, intervalMs - elapsed),
+          intervalId: intervalOption.id,
+          intervalLabel: intervalOption.label,
+          intervalShortLabel: intervalOption.shortLabel,
           seenCount: Math.min(seenIds.length, MOTIVATIONAL_QUOTES.length),
           totalCount: MOTIVATIONAL_QUOTES.length,
         };
@@ -61,7 +106,8 @@ export async function getOrRotateDailyQuote(): Promise<DailyQuoteState> {
       }
     }
 
-    // 24 hours have elapsed or first load: select next quote from unseen pool
+    // Interval has elapsed (or first run / forced rotate):
+    // Filter unseen quotes in the current cycle
     let unseenQuotes = MOTIVATIONAL_QUOTES.filter((q) => !seenIds.includes(q.id));
 
     // If all quotes have been seen, reshuffle and start a fresh cycle
@@ -77,7 +123,7 @@ export async function getOrRotateDailyQuote(): Promise<DailyQuoteState> {
     // Update seen IDs
     const updatedSeenIds = [...seenIds, selectedQuote.id];
 
-    // Persist to AsyncStorage
+    // Persist immediately to AsyncStorage
     await Promise.all([
       AsyncStorage.setItem(STORAGE_KEY_CURRENT_QUOTE, JSON.stringify(selectedQuote)),
       AsyncStorage.setItem(STORAGE_KEY_LAST_TIMESTAMP, now.toString()),
@@ -87,17 +133,23 @@ export async function getOrRotateDailyQuote(): Promise<DailyQuoteState> {
     return {
       quote: selectedQuote,
       lastShownTimestamp: now,
-      timeRemainingMs: ROTATION_INTERVAL_MS,
+      timeRemainingMs: intervalMs,
+      intervalId: intervalOption.id,
+      intervalLabel: intervalOption.label,
+      intervalShortLabel: intervalOption.shortLabel,
       seenCount: updatedSeenIds.length,
       totalCount: MOTIVATIONAL_QUOTES.length,
     };
   } catch (error) {
     console.error('Error in getOrRotateDailyQuote:', error);
-    // Fallback to first quote if storage error occurs
+    const defaultOption = getQuoteIntervalOption(DEFAULT_QUOTE_INTERVAL_ID);
     return {
       quote: MOTIVATIONAL_QUOTES[0],
       lastShownTimestamp: now,
-      timeRemainingMs: ROTATION_INTERVAL_MS,
+      timeRemainingMs: defaultOption.durationMs,
+      intervalId: defaultOption.id,
+      intervalLabel: defaultOption.label,
+      intervalShortLabel: defaultOption.shortLabel,
       seenCount: 1,
       totalCount: MOTIVATIONAL_QUOTES.length,
     };

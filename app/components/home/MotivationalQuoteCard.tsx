@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DailyQuoteState, getOrRotateDailyQuote } from '@/services/quotes';
@@ -10,31 +11,51 @@ export function MotivationalQuoteCard() {
   const colors = Colors[colorScheme];
   const [quoteState, setQuoteState] = useState<DailyQuoteState | null>(null);
   const [loading, setLoading] = useState(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchQuote = useCallback(async () => {
+    try {
+      const state = await getOrRotateDailyQuote();
+      setQuoteState(state);
 
-    async function loadQuote() {
-      try {
-        const state = await getOrRotateDailyQuote();
-        if (isMounted) {
-          setQuoteState(state);
-        }
-      } catch (err) {
-        console.error('Failed to load quote:', err);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+      // Clear any existing timer
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
+
+      // Schedule next rotation when timeRemainingMs expires
+      if (state.timeRemainingMs > 0) {
+        // Schedule next check (cap between 1s and 24h)
+        const delay = Math.min(Math.max(1000, state.timeRemainingMs), 24 * 60 * 60 * 1000);
+        timerRef.current = setTimeout(() => {
+          fetchQuote();
+        }, delay);
+      }
+    } catch (err) {
+      console.error('Failed to load quote:', err);
+    } finally {
+      setLoading(false);
     }
-
-    loadQuote();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
+
+  // Check and refresh quote whenever Home tab gains focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchQuote();
+
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+      };
+    }, [fetchQuote])
+  );
+
+  const refreshLabel = quoteState?.intervalShortLabel
+    ? `Refreshes every ${quoteState.intervalShortLabel}`
+    : 'Refreshes every 24h';
 
   return (
     <View
@@ -54,7 +75,7 @@ export function MotivationalQuoteCard() {
             <Ionicons name="sparkles" size={14} color={colors.primary} />
             <Text style={[styles.badgeText, { color: colors.primary }]}>DAILY INSPIRATION</Text>
           </View>
-          <Text style={[styles.cycleText, { color: colors.textMuted }]}>Refreshes every 24h</Text>
+          <Text style={[styles.cycleText, { color: colors.textMuted }]}>{refreshLabel}</Text>
         </View>
       </View>
 

@@ -24,6 +24,7 @@ export const Colors = {
     quoteBg: '#F1F5F9',
     quoteBorder: '#CBD5E1',
     quoteAccent: '#818CF8',
+    toggleTrackInactive: '#E2E8F0',
   },
   dark: {
     primary: primaryLight,
@@ -31,20 +32,21 @@ export const Colors = {
     text: '#F8FAFC',
     textSecondary: '#94A3B8',
     textMuted: '#64748B',
-    background: '#0F172A',
-    cardBackground: '#1E293B',
-    cardBorder: '#334155',
-    tint: primaryLight,
+    background: '#0B0F19', // Deep slate / charcoal (true dark, not pitch black)
+    cardBackground: '#151D2E', // Sufficiently elevated card surface with subtle contrast
+    cardBorder: '#232E42', // Refined subtle card border
+    tint: '#818CF8',
     icon: '#94A3B8',
     tabIconDefault: '#64748B',
-    tabIconSelected: primaryLight,
-    tabBarBackground: '#1E293B',
+    tabIconSelected: '#818CF8',
+    tabBarBackground: '#111726',
     danger: '#F87171',
     success: '#34D399',
     warning: '#FBBF24',
-    quoteBg: '#1E293B',
-    quoteBorder: '#334155',
+    quoteBg: '#1B2438',
+    quoteBorder: '#2A374F',
     quoteAccent: '#818CF8',
+    toggleTrackInactive: '#1E293B',
   },
 };
 

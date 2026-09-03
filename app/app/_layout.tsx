@@ -13,6 +13,7 @@ import {
   LobsterTwo_700Bold_Italic,
 } from '@expo-google-fonts/lobster-two';
 
+import { AppThemeProvider } from '@/context/ThemeContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 // Prevent splash screen from auto-hiding before font assets are loaded
@@ -24,7 +25,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
+function RootNavigationContent() {
   const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
@@ -49,7 +50,15 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <RootNavigationContent />
+    </AppThemeProvider>
   );
 }
