@@ -10,6 +10,35 @@ const STORAGE_KEYS: Record<TaskSectionType, string> = {
 
 const STORAGE_KEY_LAST_ROLLOVER = '@myManager:last_rollover_ist_date';
 
+export type TaskChangeListener = () => void;
+
+// Simple in-memory pub/sub so every TaskSection can refresh instantly
+// whenever tasks are added, edited, moved, toggled or removed.
+const taskChangeListeners = new Set<TaskChangeListener>();
+
+/**
+ * Subscribe to any task mutation. Returns an unsubscribe function.
+ */
+export function subscribeToTaskChanges(listener: TaskChangeListener): () => void {
+  taskChangeListeners.add(listener);
+  return () => {
+    taskChangeListeners.delete(listener);
+  };
+}
+
+/**
+ * Notify all subscribers that tasks changed.
+ */
+function notifyTaskChanges(): void {
+  taskChangeListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {
+      // A single failing listener must never block a save operation.
+    }
+  });
+}
+
 /**
  * Check and execute the 12:00 AM IST midnight task rollover.
  * - Today's Tasks get cleared.
@@ -98,6 +127,7 @@ export async function saveTasks(section: TaskSectionType, tasks: TaskItem[]): Pr
     if (section === 'today') {
       syncPendingTasksNotification(tasks).catch(() => {});
     }
+    notifyTaskChanges();
   } catch (error) {
     console.error(`Error saving tasks for ${section}:`, error);
   }
@@ -138,6 +168,50 @@ export async function toggleTask(section: TaskSectionType, taskId: string): Prom
 export async function removeTask(section: TaskSectionType, taskId: string): Promise<TaskItem[]> {
   const current = await loadTasks(section);
   const updated = current.filter((item) => item.id !== taskId);
+  await saveTasks(section, updated);
+  return updated;
+}
+
+export interface TaskUpdateFields {
+  text?: string;
+  completed?: boolean;
+  /** Optional target section to move the task between Today / Tomorrow. */
+  section?: TaskSectionType;
+}
+
+/**
+ * Update an existing task in place (matched by its unique id) and persist immediately.
+ * - The task id is always preserved (never duplicated).
+ * - Optionally moves the task to another section.
+ * - Linked notifications are re-synced automatically via saveTasks.
+ * Returns the updated list for the section passed in.
+ */
+export async function updateTask(
+  section: TaskSectionType,
+  taskId: string,
+  updatedFields: TaskUpdateFields
+): Promise<TaskItem[]> {
+  const { section: targetSection, ...fieldUpdates } = updatedFields;
+
+  const current = await loadTasks(section);
+  const existing = current.find((item) => item.id === taskId);
+  if (!existing) {
+    return current;
+  }
+
+  const updatedTask: TaskItem = { ...existing, ...fieldUpdates };
+
+  // Moving the task to a different section while keeping the same id.
+  if (targetSection && targetSection !== section) {
+    const remaining = current.filter((item) => item.id !== taskId);
+    const targetCurrent = await loadTasks(targetSection);
+    const targetUpdated = [updatedTask, ...targetCurrent];
+    await saveTasks(section, remaining);
+    await saveTasks(targetSection, targetUpdated);
+    return remaining;
+  }
+
+  const updated = current.map((item) => (item.id === taskId ? updatedTask : item));
   await saveTasks(section, updated);
   return updated;
 }

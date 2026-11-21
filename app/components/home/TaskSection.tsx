@@ -14,42 +14,90 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { TaskItem, TaskSectionType } from '@/types/task';
-import { addTask, loadTasks, removeTask, toggleTask } from '@/services/taskStorage';
+import {
+  addTask,
+  loadTasks,
+  removeTask,
+  subscribeToTaskChanges,
+  toggleTask,
+  updateTask,
+} from '@/services/taskStorage';
 
 interface TaskSectionProps {
   title: string;
   section: TaskSectionType;
 }
 
+// Home day options. The 'yesterday' storage key is shown to the user as "Tomorrow".
+const DAY_OPTIONS: { section: TaskSectionType; label: string }[] = [
+  { section: 'today', label: 'Today' },
+  { section: 'yesterday', label: 'Tomorrow' },
+];
+
 export function TaskSection({ title, section }: TaskSectionProps) {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [newTaskText, setNewTaskText] = useState('');
+  const [isTaskModalVisible, setIsTaskModalVisible] = useState(false);
+  const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
+  const [taskText, setTaskText] = useState('');
+  const [targetSection, setTargetSection] = useState<TaskSectionType>(section);
   const [selectedTaskForMenu, setSelectedTaskForMenu] = useState<TaskItem | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    async function fetchTasks() {
-      const items = await loadTasks(section);
-      if (isMounted) {
-        setTasks(items);
-      }
-    }
-    fetchTasks();
+    const reload = () => {
+      loadTasks(section)
+        .then((items) => {
+          if (isMounted) {
+            setTasks(items);
+          }
+        })
+        .catch(() => {});
+    };
+    reload();
+    // Refresh this section instantly whenever any task changes (add/edit/move/remove).
+    const unsubscribe = subscribeToTaskChanges(reload);
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [section]);
 
-  const handleAddTask = async () => {
-    if (!newTaskText.trim()) return;
-    const updated = await addTask(section, newTaskText);
-    setTasks(updated);
-    setNewTaskText('');
-    setIsAddModalVisible(false);
+  const openAddModal = () => {
+    setEditingTask(null);
+    setTaskText('');
+    setTargetSection(section);
+    setIsTaskModalVisible(true);
+  };
+
+  const openEditModal = (task: TaskItem) => {
+    setSelectedTaskForMenu(null);
+    setEditingTask(task);
+    setTaskText(task.text);
+    setTargetSection(section);
+    setIsTaskModalVisible(true);
+  };
+
+  const closeTaskModal = () => {
+    setIsTaskModalVisible(false);
+    setEditingTask(null);
+    setTaskText('');
+  };
+
+  const handleSubmitTask = async () => {
+    const trimmed = taskText.trim();
+    if (!trimmed) return;
+
+    if (editingTask) {
+      // Update the SAME task (same id) and optionally move it to another day.
+      await updateTask(section, editingTask.id, { text: trimmed, section: targetSection });
+    } else {
+      const updated = await addTask(section, trimmed);
+      setTasks(updated);
+    }
+    closeTaskModal();
   };
 
   const handleToggleTask = async (taskId: string) => {
@@ -89,7 +137,7 @@ export function TaskSection({ title, section }: TaskSectionProps) {
           </View>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setIsAddModalVisible(true)}
+            onPress={openAddModal}
             style={[styles.addButton, { backgroundColor: colors.primary }]}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityLabel={`Add task to ${title}`}>
@@ -171,16 +219,16 @@ export function TaskSection({ title, section }: TaskSectionProps) {
         )}
       </View>
 
-      {/* Add Task Modal */}
+      {/* Add / Edit Task Modal (shared form, reused for both modes) */}
       <Modal
-        visible={isAddModalVisible}
+        visible={isTaskModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setIsAddModalVisible(false)}>
+        onRequestClose={closeTaskModal}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalOverlay}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setIsAddModalVisible(false)} />
+          <Pressable style={styles.modalBackdrop} onPress={closeTaskModal} />
           <View
             style={[
               styles.modalCard,
@@ -190,16 +238,18 @@ export function TaskSection({ title, section }: TaskSectionProps) {
               },
             ]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Add New Task</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {editingTask ? 'Edit Task' : 'Add New Task'}
+              </Text>
               <TouchableOpacity
-                onPress={() => setIsAddModalVisible(false)}
+                onPress={closeTaskModal}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="close" size={22} color={colors.icon} />
               </TouchableOpacity>
             </View>
 
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              Adding to: {title.replace(/\.+$/, '').trim()}
+              {editingTask ? 'Updating' : 'Adding to'}: {title.replace(/\.+$/, '').trim()}
             </Text>
 
             <TextInput
@@ -213,20 +263,49 @@ export function TaskSection({ title, section }: TaskSectionProps) {
               ]}
               placeholder="What do you need to do?"
               placeholderTextColor={colors.textMuted}
-              value={newTaskText}
-              onChangeText={setNewTaskText}
+              value={taskText}
+              onChangeText={setTaskText}
               autoFocus
               multiline
               maxLength={200}
             />
 
+            {editingTask && (
+              <>
+                <Text style={[styles.dayLabel, { color: colors.textMuted }]}>Day</Text>
+                <View style={styles.dayRow}>
+                  {DAY_OPTIONS.map((option) => {
+                    const isActive = targetSection === option.section;
+                    return (
+                      <TouchableOpacity
+                        key={option.section}
+                        activeOpacity={0.7}
+                        onPress={() => setTargetSection(option.section)}
+                        style={[
+                          styles.dayChip,
+                          {
+                            backgroundColor: isActive ? colors.primary : 'transparent',
+                            borderColor: isActive ? colors.primary : colors.cardBorder,
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.dayChipText,
+                            { color: isActive ? '#FFFFFF' : colors.textSecondary },
+                          ]}>
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
+
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.actionBtn, styles.cancelBtn, { borderColor: colors.cardBorder }]}
-                onPress={() => {
-                  setNewTaskText('');
-                  setIsAddModalVisible(false);
-                }}>
+                onPress={closeTaskModal}>
                 <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
 
@@ -235,12 +314,14 @@ export function TaskSection({ title, section }: TaskSectionProps) {
                   styles.actionBtn,
                   styles.submitBtn,
                   {
-                    backgroundColor: newTaskText.trim() ? colors.primary : colors.cardBorder,
+                    backgroundColor: taskText.trim() ? colors.primary : colors.cardBorder,
                   },
                 ]}
-                disabled={!newTaskText.trim()}
-                onPress={handleAddTask}>
-                <Text style={styles.submitBtnText}>Add Task</Text>
+                disabled={!taskText.trim()}
+                onPress={handleSubmitTask}>
+                <Text style={styles.submitBtnText}>
+                  {editingTask ? 'Update Task' : 'Add Task'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -274,6 +355,16 @@ export function TaskSection({ title, section }: TaskSectionProps) {
             </View>
 
             <View style={[styles.menuDivider, { backgroundColor: colors.cardBorder }]} />
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.menuOptionEdit}
+              onPress={() => {
+                if (selectedTaskForMenu) openEditModal(selectedTaskForMenu);
+              }}>
+              <Ionicons name="create-outline" size={20} color={colors.primary} />
+              <Text style={[styles.menuOptionEditText, { color: colors.primary }]}>Edit Task</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               activeOpacity={0.7}
@@ -530,6 +621,17 @@ const styles = StyleSheet.create({
     height: 1,
     marginVertical: 6,
   },
+  menuOptionEdit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  menuOptionEditText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
   menuOptionRemove: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -549,5 +651,29 @@ const styles = StyleSheet.create({
   menuCancelText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  dayLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  dayRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
+  },
+  dayChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayChipText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
