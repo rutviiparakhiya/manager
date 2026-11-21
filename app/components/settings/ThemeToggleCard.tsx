@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   cardBox: {
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 1,
     padding: 18,
     shadowColor: '#000',

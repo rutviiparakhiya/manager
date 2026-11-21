@@ -8,8 +8,10 @@ import 'react-native-reanimated';
 
 import {
   useFonts,
-  Satisfy_400Regular,
-} from '@expo-google-fonts/satisfy';
+  DancingScript_400Regular,
+  DancingScript_700Bold,
+} from '@expo-google-fonts/dancing-script';
+import { Ionicons } from '@expo/vector-icons';
 
 import { AppThemeProvider } from '@/context/ThemeContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -30,29 +32,32 @@ function RootNavigationContent() {
   const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
-    Satisfy_400Regular,
+    DancingScript: DancingScript_400Regular,
+    DancingScript_400Regular,
+    DancingScript_700Bold,
+    ...Ionicons.font,
   });
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync().catch(() => {});
+      SplashScreen.hideAsync().catch(() => { });
     }
   }, [fontsLoaded, fontError]);
 
   // Request notification permissions on app mount
   useEffect(() => {
-    requestNotificationPermissions().catch(() => {});
+    requestNotificationPermissions().catch(() => { });
   }, []);
 
   // Check midnight rollover on app resume / state change and set exact midnight timer
   useEffect(() => {
     // Check rollover on launch
-    checkAndApplyMidnightRollover().catch(() => {});
+    checkAndApplyMidnightRollover().catch(() => { });
 
     // Listen for app coming to foreground
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
-        checkAndApplyMidnightRollover().catch(() => {});
+        checkAndApplyMidnightRollover().catch(() => { });
       }
     });
 
@@ -62,7 +67,7 @@ function RootNavigationContent() {
       const nextMidnightMs = getNextISTMidnightTimestamp();
       const delay = Math.max(1000, nextMidnightMs - Date.now() + 500); // 500ms grace past midnight
       midnightTimer = setTimeout(async () => {
-        await checkAndApplyMidnightRollover().catch(() => {});
+        await checkAndApplyMidnightRollover().catch(() => { });
         scheduleNextMidnight();
       }, delay);
     };

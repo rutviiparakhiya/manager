@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { CalendarTasksMap, CalendarTaskItem } from '@/types/calendar';
@@ -161,11 +161,9 @@ export default function CalendarScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
-        {/* Brand Header */}
+        {/* Clean Brand Header */}
         <View style={styles.headerContainer}>
-          <View style={styles.brandRow}>
-            <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
-          </View>
+          <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
           <Text style={[styles.appTagline, { color: colors.textSecondary }]}>
             Plan ahead, track tasks, and schedule your days.
           </Text>
@@ -238,26 +236,15 @@ const styles = StyleSheet.create({
   headerContainer: {
     marginBottom: 16,
   },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
   appName: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -0.8,
-  },
-  brandDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 4,
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.6,
   },
   appTagline: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: 6,
     letterSpacing: 0.1,
   },
 });

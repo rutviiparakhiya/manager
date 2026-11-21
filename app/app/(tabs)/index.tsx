@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { MotivationalQuoteCard } from '@/components/home/MotivationalQuoteCard';
@@ -32,21 +32,19 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
-        {/* Top-left App Name Header without dot or subtitle */}
+        {/* Clean Header with only app name */}
         <View style={styles.headerContainer}>
-          <View style={styles.brandRow}>
-            <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
-          </View>
+          <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
         </View>
 
-        {/* Motivational Quote Section (clean, no box styling) */}
+        {/* Motivational Quote Section */}
         <MotivationalQuoteCard />
 
         {/* Today's Tasks */}
         <TaskSection title="Today's Tasks..." section="today" />
 
-        {/* Yesterday's Tasks */}
-        <TaskSection title="Yesterday's Tasks....." section="yesterday" />
+        {/* Tomorrow's Tasks */}
+        <TaskSection title="Tomorrow's Tasks....." section="yesterday" />
       </ScrollView>
     </View>
   );
@@ -63,15 +61,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerContainer: {
-    marginBottom: 16,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    marginBottom: 20,
   },
   appName: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -0.8,
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.6,
   },
 });

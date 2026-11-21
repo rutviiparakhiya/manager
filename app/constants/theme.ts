@@ -1,52 +1,74 @@
 import { Platform } from 'react-native';
 
-const primaryColor = '#4F46E5'; // Modern vibrant indigo
-const primaryLight = '#6366F1';
-
+/**
+ * myManager Brand Color Palette:
+ * - Light Mode: Clean mint & crisp white surfaces with vibrant Royal Blue accent (#2563EB)
+ * - Dark Mode: Deep Navy surfaces (#18192E / #242646) with luminous Azure Sky Blue accent (#38BDF8)
+ */
 export const Colors = {
   light: {
-    primary: primaryColor,
-    primaryLight: primaryLight,
-    text: '#0F172A', // Slate 900
-    textSecondary: '#64748B', // Slate 500
-    textMuted: '#94A3B8', // Slate 400
-    background: '#F8FAFC', // Slate 50
-    cardBackground: '#FFFFFF',
-    cardBorder: '#E2E8F0', // Slate 200
-    tint: primaryColor,
+    // Primary brand accents (crisp royal blue)
+    primary: '#2563EB',
+    primaryLight: '#3B82F6',
+    tint: '#2563EB',
+
+    // Text hierarchy
+    text: '#0F172A', // Deep slate navy
+    textSecondary: '#475569', // Medium slate
+    textMuted: '#94A3B8', // Muted slate
+
+    // Surfaces & borders
+    background: '#F0F9F8', // Soft crisp mint canvas
+    cardBackground: '#FFFFFF', // Clean crisp white card
+    cardBorder: '#D2ECE8', // Soft mint-slate border
+    cardHeaderBg: '#F8FAFC',
+
+    // Interactive & navigation
     icon: '#64748B',
     tabIconDefault: '#94A3B8',
-    tabIconSelected: primaryColor,
+    tabIconSelected: '#2563EB',
     tabBarBackground: '#FFFFFF',
-    danger: '#EF4444',
-    success: '#10B981',
-    warning: '#F59E0B',
-    quoteBg: '#F1F5F9',
-    quoteBorder: '#CBD5E1',
-    quoteAccent: '#818CF8',
     toggleTrackInactive: '#E2E8F0',
+
+    // Feedback & accents (all blue accents, zero green)
+    danger: '#EF4444',
+    success: '#2563EB', // Blue task completion & checkmarks
+    warning: '#F59E0B',
+    quoteBg: '#EFF6FF', // Soft ice-blue quote surface
+    quoteBorder: '#BFDBFE', // Light blue quote border
+    quoteAccent: '#2563EB',
   },
   dark: {
-    primary: primaryLight,
-    primaryLight: '#818CF8',
-    text: '#F8FAFC',
-    textSecondary: '#94A3B8',
-    textMuted: '#64748B',
-    background: '#0B0F19', // Deep slate / charcoal (true dark, not pitch black)
-    cardBackground: '#151D2E', // Sufficiently elevated card surface with subtle contrast
-    cardBorder: '#232E42', // Refined subtle card border
-    tint: '#818CF8',
-    icon: '#94A3B8',
-    tabIconDefault: '#64748B',
-    tabIconSelected: '#818CF8',
-    tabBarBackground: '#111726',
+    // Primary brand accents (luminous azure sky blue with maximum contrast on deep navy)
+    primary: '#38BDF8',
+    primaryLight: '#60A5FA',
+    tint: '#38BDF8',
+
+    // Text hierarchy
+    text: '#F8FAFC', // Crisp light slate
+    textSecondary: '#A5B4CB', // Soft lavender slate
+    textMuted: '#6B7294', // Muted indigo slate
+
+    // Surfaces & borders
+    background: '#18192E', // Deep night navy
+    cardBackground: '#242646', // Refined navy surface (#26264B / #282A4E family)
+    cardBorder: '#363963', // Indigo-navy border
+    cardHeaderBg: '#20223E',
+
+    // Interactive & navigation
+    icon: '#A5B4CB',
+    tabIconDefault: '#6B7294',
+    tabIconSelected: '#38BDF8',
+    tabBarBackground: '#1D1F38',
+    toggleTrackInactive: '#2C2E52',
+
+    // Feedback & accents (all blue accents, zero green)
     danger: '#F87171',
-    success: '#34D399',
+    success: '#38BDF8', // Luminous blue task completion & checkmarks
     warning: '#FBBF24',
-    quoteBg: '#1B2438',
-    quoteBorder: '#2A374F',
-    quoteAccent: '#818CF8',
-    toggleTrackInactive: '#1E293B',
+    quoteBg: '#1E2548', // Deep navy-blue accent surface
+    quoteBorder: '#2F3C6E',
+    quoteAccent: '#38BDF8',
   },
 };
 

@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DailyQuoteState, getOrRotateDailyQuote } from '@/services/quotes';
@@ -52,43 +51,39 @@ export function MotivationalQuoteCard() {
     }, [fetchQuote])
   );
 
-  const refreshLabel = quoteState?.intervalShortLabel
-    ? `Refreshes every ${quoteState.intervalShortLabel}`
-    : 'Refreshes every 24h';
-
   return (
     <View style={styles.quoteContainer}>
-      {/* Top refresh interval indicator */}
-      <View style={styles.metaRow}>
-        <View style={styles.refreshIndicator}>
-          <Ionicons name="time-outline" size={13} color={colors.textMuted} />
-          <Text style={[styles.cycleText, { color: colors.textMuted }]}>{refreshLabel}</Text>
-        </View>
-      </View>
-
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       ) : (
         <View style={styles.quoteBody}>
-          <View style={styles.quoteRow}>
-            <Text
-              style={[
-                styles.quoteText,
-                {
-                  color: colors.text,
-                },
-              ]}>
-              &ldquo;{quoteState?.quote.quote}&rdquo;
-            </Text>
-          </View>
+          {/* Accent left bar + quote block */}
+          <View style={styles.accentRow}>
+            {/* Colored left accent bar */}
+            <View style={[styles.accentBar, { backgroundColor: colors.quoteAccent }]} />
 
-          <View style={styles.authorRow}>
-            <View style={[styles.authorDivider, { backgroundColor: colors.cardBorder }]} />
-            <Text style={[styles.authorText, { color: colors.textSecondary }]}>
-              — {quoteState?.quote.author}
-            </Text>
+            <View style={styles.quoteContent}>
+              {/* Quote text continuously wrapped in double quotes */}
+              <Text
+                style={[
+                  styles.quoteText,
+                  {
+                    color: colors.text,
+                  },
+                ]}>
+                {'\u201C'}{quoteState?.quote.quote}{'\u201D'}
+              </Text>
+
+              {/* Author attribution */}
+              <View style={styles.authorRow}>
+                <View style={[styles.authorDash, { backgroundColor: colors.quoteAccent }]} />
+                <Text style={[styles.authorText, { color: colors.textSecondary }]}>
+                  {quoteState?.quote.author}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
       )}
@@ -98,23 +93,8 @@ export function MotivationalQuoteCard() {
 
 const styles = StyleSheet.create({
   quoteContainer: {
-    marginBottom: 24,
+    marginBottom: 26,
     paddingHorizontal: 2,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  refreshIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  cycleText: {
-    fontSize: 11,
-    fontWeight: '500',
   },
   loadingContainer: {
     paddingVertical: 24,
@@ -122,31 +102,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   quoteBody: {
-    paddingTop: 2,
+    paddingTop: 4,
   },
-  quoteRow: {
-    marginBottom: 10,
+  accentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  accentBar: {
+    width: 3.5,
+    borderRadius: 2,
+    marginRight: 14,
+    marginTop: 4,
+    alignSelf: 'stretch',
+    opacity: 0.9,
+  },
+  quoteContent: {
+    flex: 1,
   },
   quoteText: {
-    fontFamily: 'Satisfy_400Regular',
+    fontFamily: 'DancingScript',
     fontSize: 24,
     lineHeight: 34,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 12,
+    gap: 8,
+    marginTop: 8,
   },
-  authorDivider: {
-    flex: 1,
-    height: 1,
-    opacity: 0.6,
+  authorDash: {
+    width: 14,
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.8,
   },
   authorText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     fontStyle: 'italic',
+    letterSpacing: 0.2,
   },
 });

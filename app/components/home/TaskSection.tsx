@@ -80,7 +80,7 @@ export function TaskSection({ title, section }: TaskSectionProps) {
             borderColor: colors.cardBorder,
           },
         ]}>
-        {/* Card Header with count and '+' Button */}
+        {/* Card Header with count and circular '+' Button */}
         <View style={[styles.cardTopBar, { borderBottomColor: colors.cardBorder }]}>
           <View style={styles.countBadgeContainer}>
             <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
@@ -93,8 +93,7 @@ export function TaskSection({ title, section }: TaskSectionProps) {
             style={[styles.addButton, { backgroundColor: colors.primary }]}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityLabel={`Add task to ${title}`}>
-            <Ionicons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Add</Text>
+            <Text style={styles.addButtonPlus}>+</Text>
           </TouchableOpacity>
         </View>
 
@@ -102,11 +101,11 @@ export function TaskSection({ title, section }: TaskSectionProps) {
         {tasks.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.quoteBg }]}>
-              <Ionicons name="clipboard-outline" size={32} color={colors.textMuted} />
+              <Ionicons name="clipboard-outline" size={28} color={colors.primary} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No tasks yet</Text>
             <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-              Tap the + Add button above to create one.
+              Tap the + button above to create one.
             </Text>
           </View>
         ) : (
@@ -130,11 +129,13 @@ export function TaskSection({ title, section }: TaskSectionProps) {
                       style={[
                         styles.checkbox,
                         {
-                          borderColor: task.completed ? colors.success : colors.cardBorder,
-                          backgroundColor: task.completed ? colors.success : 'transparent',
+                          borderColor: task.completed ? colors.primary : colors.cardBorder,
+                          backgroundColor: task.completed ? colors.primary : 'transparent',
                         },
                       ]}>
-                      {task.completed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                      {task.completed && (
+                        <Ionicons name="checkmark-sharp" size={15} color="#FFFFFF" />
+                      )}
                     </View>
                   </TouchableOpacity>
 
@@ -308,9 +309,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   cardBox: {
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 1,
-    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -321,8 +321,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   countBadgeContainer: {
@@ -336,33 +336,35 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   addButton: {
-    flexDirection: 'row',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    shadowColor: '#4F46E5',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
-  addButtonText: {
+  addButtonPlus: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 24,
+    lineHeight: 26,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: Platform.OS === 'android' ? -2 : 0,
   },
   emptyContainer: {
-    paddingVertical: 36,
+    paddingVertical: 32,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -377,7 +379,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   taskList: {
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   taskRow: {
     flexDirection: 'row',
@@ -410,7 +412,7 @@ const styles = StyleSheet.create({
   },
   taskTextCompleted: {
     textDecorationLine: 'line-through',
-    opacity: 0.7,
+    opacity: 0.6,
   },
   menuButton: {
     padding: 10,
@@ -430,7 +432,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 20,
     shadowColor: '#000',
@@ -499,7 +501,7 @@ const styles = StyleSheet.create({
   menuCard: {
     width: '100%',
     maxWidth: 320,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 16,
     shadowColor: '#000',

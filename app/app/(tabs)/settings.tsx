@@ -25,11 +25,9 @@ export default function SettingsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
-        {/* Brand Header */}
+        {/* Clean Brand Header */}
         <View style={styles.headerContainer}>
-          <View style={styles.brandRow}>
-            <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
-          </View>
+          <Text style={[styles.appName, { color: colors.text }]}>myManager</Text>
           <Text style={[styles.appTagline, { color: colors.textSecondary }]}>
             Preferences, appearance, and quote settings.
           </Text>
@@ -103,26 +101,15 @@ const styles = StyleSheet.create({
   headerContainer: {
     marginBottom: 24,
   },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
   appName: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -0.8,
-  },
-  brandDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 4,
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.6,
   },
   appTagline: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: 6,
     letterSpacing: 0.1,
   },
   aboutWrapper: {
@@ -137,7 +124,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   aboutCard: {
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 1,
     padding: 18,
     shadowColor: '#000',

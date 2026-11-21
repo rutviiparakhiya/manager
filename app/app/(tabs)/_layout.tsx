@@ -34,6 +34,7 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
+          letterSpacing: 0.2,
         },
       }}>
       <Tabs.Screen
@@ -41,7 +42,11 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
@@ -50,7 +55,11 @@ export default function TabLayout() {
         options={{
           title: 'Calendar',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+            <Ionicons
+              name={focused ? 'calendar' : 'calendar-outline'}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
@@ -59,7 +68,11 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={23}
+              color={color}
+            />
           ),
         }}
       />

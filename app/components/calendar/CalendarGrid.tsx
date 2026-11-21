@@ -232,7 +232,7 @@ export function CalendarGrid({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 1,
     paddingVertical: 14,
     paddingHorizontal: 10,
