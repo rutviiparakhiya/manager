@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "295a4922-06bb-4e64-a133-37aeefd751cf"
+      }
+    },
+    "android": {
+      "package": "com.rutviparakhiya01.mymanagerroot"
+    }
+  }
+}
